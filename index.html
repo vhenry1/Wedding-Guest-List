@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wedding Guest List</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ============ LOADING ============ -->
+  <main id="loading-view" class="loading" aria-live="polite">
+    <span class="monogram" aria-hidden="true">&amp;</span>
+    <p class="muted">Loading your guest list…</p>
+  </main>
+
+  <!-- ============ AUTH SCREEN ============ -->
+  <main id="auth-view" class="auth" hidden>
+    <section class="auth-card">
+      <div class="auth-brand">
+        <span class="monogram" aria-hidden="true">&amp;</span>
+        <h1>Our Guest List</h1>
+        <p class="muted">Track every household, invitation and RSVP in one place.</p>
+      </div>
+
+      <div class="tabs" role="tablist">
+        <button class="tab is-active" role="tab" data-tab="login" aria-selected="true">Log in</button>
+        <button class="tab" role="tab" data-tab="signup" aria-selected="false">Create account</button>
+      </div>
+
+      <form id="login-form" class="form" novalidate>
+        <label>Email
+          <input type="email" name="email" autocomplete="email" required>
+        </label>
+        <label>Password
+          <input type="password" name="password" autocomplete="current-password" required>
+        </label>
+        <p class="form-error" role="alert"></p>
+        <button class="btn btn-primary btn-block" type="submit">Log in</button>
+      </form>
+
+      <form id="signup-form" class="form" novalidate hidden>
+        <label>Your names
+          <input type="text" name="couple" placeholder="e.g. Jenna &amp; Alex" autocomplete="name" required>
+        </label>
+        <label>Wedding date <span class="optional">(optional)</span>
+          <input type="date" name="date">
+        </label>
+        <label>Email
+          <input type="email" name="email" autocomplete="email" required>
+        </label>
+        <label>Password <span class="optional">(min. 8 characters)</span>
+          <input type="password" name="password" autocomplete="new-password" minlength="8" required>
+        </label>
+        <p class="form-error" role="alert"></p>
+        <button class="btn btn-primary btn-block" type="submit">Create account</button>
+      </form>
+    </section>
+  </main>
+
+  <!-- ============ APP ============ -->
+  <div id="app-view" hidden>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <span class="monogram small" aria-hidden="true">&amp;</span>
+          <div>
+            <h1 id="couple-name">Our Wedding</h1>
+            <p id="countdown" class="muted small"></p>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button id="export-btn" class="btn btn-ghost" type="button">Export CSV</button>
+          <button id="logout-btn" class="btn btn-ghost" type="button">Log out</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="list-header">
+        <div>
+          <h2>Guest List</h2>
+          <p class="summary" aria-label="Summary">
+            <span><b id="stat-households">0</b> households</span>
+            <span><b id="stat-guests">0</b> guests</span>
+            <span class="s-yes"><b id="stat-attending">0</b> attending</span>
+            <span class="s-no"><b id="stat-declined">0</b> declined</span>
+            <span class="s-wait"><b id="stat-pending">0</b> awaiting</span>
+          </p>
+        </div>
+        <button id="add-household-btn" class="btn btn-primary" type="button">+ Add household</button>
+      </section>
+
+      <section id="tier-bar" class="tier-bar" aria-label="Guests by priority"></section>
+
+      <section class="toolbar">
+        <input id="search" type="search" placeholder="Search households or guests…" aria-label="Search">
+        <select id="filter-priority" aria-label="Filter by priority">
+          <option value="">All priorities</option>
+          <option value="1">1 · Must have</option>
+          <option value="2">2 · Pretty important</option>
+          <option value="3">3 · Sorta important</option>
+          <option value="4">4 · If there's space</option>
+        </select>
+        <select id="filter-side" aria-label="Filter by side">
+          <option value="">All sides</option>
+          <option>Bride</option>
+          <option>Groom</option>
+          <option>Both</option>
+        </select>
+        <select id="filter-rsvp" aria-label="Filter by RSVP">
+          <option value="">All RSVPs</option>
+          <option value="pending">Awaiting reply</option>
+          <option value="attending">Attending</option>
+          <option value="declined">Declined</option>
+        </select>
+      </section>
+
+      <p id="rsvp-legend" class="legend" aria-hidden="true">
+        <span class="chip attending">Attending</span>
+        <span class="chip">Awaiting</span>
+        <span class="chip declined">Declined</span>
+      </p>
+
+      <section id="household-list" class="household-list" aria-live="polite"></section>
+
+      <div id="empty-state" class="empty" hidden>
+        <span class="monogram" aria-hidden="true">&amp;</span>
+        <h2>No households yet</h2>
+        <p class="muted">Add your first household to start building the guest list.</p>
+        <button class="btn btn-primary" type="button" data-action="add">+ Add household</button>
+      </div>
+    </main>
+  </div>
+
+  <!-- ============ HOUSEHOLD DIALOG ============ -->
+  <dialog id="household-dialog" class="dialog">
+    <form id="household-form" class="form" method="dialog" novalidate>
+      <header class="dialog-head">
+        <h2 id="dialog-title">Add household</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Close">&times;</button>
+      </header>
+
+      <div class="dialog-body">
+        <div class="grid-2">
+          <label class="span-2">Household name
+            <input type="text" name="name" placeholder="e.g. The Smith Family" required>
+          </label>
+          <fieldset class="span-2 priority-picker">
+            <legend>How important is it they come?</legend>
+            <label class="p1"><input type="radio" name="priority" value="1" checked><span><b>1</b> Must have</span></label>
+            <label class="p2"><input type="radio" name="priority" value="2"><span><b>2</b> Pretty important</span></label>
+            <label class="p3"><input type="radio" name="priority" value="3"><span><b>3</b> Sorta important</span></label>
+            <label class="p4"><input type="radio" name="priority" value="4"><span><b>4</b> If there's space</span></label>
+          </fieldset>
+          <label>Side
+            <select name="side">
+              <option>Bride</option>
+              <option>Groom</option>
+              <option>Both</option>
+            </select>
+          </label>
+          <label>Group <span class="optional">(optional)</span>
+            <input type="text" name="group" placeholder="Family, College, Work…" list="group-options">
+            <datalist id="group-options"></datalist>
+          </label>
+          <label>Email <span class="optional">(optional)</span>
+            <input type="email" name="email">
+          </label>
+          <label>Phone <span class="optional">(optional)</span>
+            <input type="tel" name="phone">
+          </label>
+          <label class="span-2">Mailing address <span class="optional">(optional)</span>
+            <textarea name="address" rows="2"></textarea>
+          </label>
+          <label class="check"><input type="checkbox" name="inviteSent"> Invitation sent</label>
+        </div>
+
+        <div class="guests-head">
+          <h3>Guests</h3>
+          <button type="button" id="add-guest-btn" class="btn btn-ghost btn-sm">+ Add guest</button>
+        </div>
+        <div id="guest-rows" class="guest-rows"></div>
+
+        <label>Notes <span class="optional">(optional)</span>
+          <textarea name="notes" rows="2" placeholder="Dietary needs, plus-one details, gift notes…"></textarea>
+        </label>
+        <p class="form-error" role="alert"></p>
+      </div>
+
+      <footer class="dialog-foot">
+        <button type="button" id="delete-household-btn" class="btn btn-danger" hidden>Delete</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+        <button type="submit" class="btn btn-primary">Save household</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <template id="guest-row-template">
+    <div class="guest-row">
+      <input type="text" class="g-name" placeholder="Guest name" aria-label="Guest name">
+      <select class="g-type" aria-label="Age group">
+        <option value="adult">Adult</option>
+        <option value="child">Child</option>
+      </select>
+      <select class="g-rsvp" aria-label="RSVP">
+        <option value="pending">Awaiting</option>
+        <option value="attending">Attending</option>
+        <option value="declined">Declined</option>
+      </select>
+      <button type="button" class="icon-btn g-remove" aria-label="Remove guest">&times;</button>
+    </div>
+  </template>
+
+  <div id="toast" class="toast" role="alert" hidden></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

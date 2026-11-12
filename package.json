@@ -1,0 +1,22 @@
+{
+  "name": "wedding-guest-list",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:auth": "esbuild src/auth-client.js --bundle --format=esm --minify --outfile=vendor/neon-auth.js",
+    "deploy": "neon deploy --env .env.local"
+  },
+  "dependencies": {
+    "@neon/auth": "^0.8.2",
+    "@neon/config": "^1.14.0",
+    "@neon/functions": "^0.11.0",
+    "hono": "^4.13.18",
+    "jose": "^6.2.17",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1",
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2"
+  }
+}
