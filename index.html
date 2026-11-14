@@ -10,10 +10,41 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  
+  <!-- ============ HOME ============ -->
+  <main id="home-page" class="home">
+    <header class="home-hero">
+      <div class="home-top">
+        <div class="home-brand">
+          <img src="assets/145-22-4-4-7-54-30m.jpg" alt="image description" class="divImage">
+          <h1 id="home-couple-name">Wedding List</h1>
+        </div>
+        <button id="enter-app-btn" class="btn btn-primary" type="button">Sign In</button>
+      </div>
+    </header>
+
+    <section class="posts" aria-label="Wedding updates">
+      <h2 class="posts-title">Updates</h2>
+
+      <article class="post">
+        <time class="post-date muted small">11/14/26</time>
+        <h3 class="post-title">Post title goes here</h3>
+        <p class="post-body">Write your update here — save-the-date news, venue details, or a little story. Fill this in whenever you're ready.</p>
+      </article>
+
+      <article class="post">
+        <time class="post-date muted small">11/12/26</time>
+        <h3 class="post-title">First Iteration</h3>
+        <p class="post-body">Rudimentary guest list tracker released and put online.</p>
+      </article>
+
+      <p class="posts-empty-hint muted small">More to come — check back soon.</p>
+    </section>
+  </main>
 
   <!-- ============ LOADING ============ -->
-  <main id="loading-view" class="loading" aria-live="polite">
-    <span class="monogram" aria-hidden="true">&amp;</span>
+  <main id="loading-view" class="loading" aria-live="polite" hidden>
+    <img src="assets/145-22-4-4-7-54-30m.jpg" alt="image description" class="monogram">
     <p class="muted">Loading your guest list…</p>
   </main>
 
@@ -21,7 +52,7 @@
   <main id="auth-view" class="auth" hidden>
     <section class="auth-card">
       <div class="auth-brand">
-        <span class="monogram" aria-hidden="true">&amp;</span>
+        <img src="assets/145-22-4-4-7-54-30m.jpg" alt="image description" class="monogram">
         <h1>Our Guest List</h1>
         <p class="muted">Track every household, invitation and RSVP in one place.</p>
       </div>
@@ -66,7 +97,7 @@
     <header class="topbar">
       <div class="topbar-inner">
         <div class="brand">
-          <span class="monogram small" aria-hidden="true">&amp;</span>
+          <img src="assets/145-22-4-4-7-54-30m.jpg" alt="image description" class="monogram">
           <div>
             <h1 id="couple-name">Our Wedding</h1>
             <p id="countdown" class="muted small"></p>
@@ -100,10 +131,11 @@
         <input id="search" type="search" placeholder="Search households or guests…" aria-label="Search">
         <select id="filter-priority" aria-label="Filter by priority">
           <option value="">All priorities</option>
-          <option value="1">1 · Must have</option>
-          <option value="2">2 · Pretty important</option>
-          <option value="3">3 · Sorta important</option>
-          <option value="4">4 · If there's space</option>
+          <option value="1">1 · Move the wedding</option>
+          <option value="2">2 · Check calendars</option>
+          <option value="3">3 · Must invite</option>
+          <option value="4">4 · Maybe</option>
+          <option value="5">5 · If possible</option>
         </select>
         <select id="filter-side" aria-label="Filter by side">
           <option value="">All sides</option>
@@ -150,11 +182,15 @@
             <input type="text" name="name" placeholder="e.g. The Smith Family" required>
           </label>
           <fieldset class="span-2 priority-picker">
-            <legend>How important is it they come?</legend>
-            <label class="p1"><input type="radio" name="priority" value="1" checked><span><b>1</b> Must have</span></label>
-            <label class="p2"><input type="radio" name="priority" value="2"><span><b>2</b> Pretty important</span></label>
-            <label class="p3"><input type="radio" name="priority" value="3"><span><b>3</b> Sorta important</span></label>
-            <label class="p4"><input type="radio" name="priority" value="4"><span><b>4</b> If there's space</span></label>
+            <legend>
+              How important is it they come?
+              <button type="button" id="invite-guide-btn" class="btn btn-ghost btn-sm quiz-btn">Not sure? Open the guide</button>
+            </legend>
+            <label class="p1"><input type="radio" name="priority" value="1" checked><span><b>1</b> Move the wedding</span></label>
+            <label class="p2"><input type="radio" name="priority" value="2"><span><b>2</b> Check calendars</span></label>
+            <label class="p3"><input type="radio" name="priority" value="3"><span><b>3</b> Must invite</span></label>
+            <label class="p4"><input type="radio" name="priority" value="4"><span><b>4</b> Maybe</span></label>
+            <label class="p5"><input type="radio" name="priority" value="5"><span><b>5</b> If possible</span></label>
           </fieldset>
           <label>Side
             <select name="side">
@@ -198,6 +234,47 @@
         <button type="submit" class="btn btn-primary">Save household</button>
       </footer>
     </form>
+  </dialog>
+
+  <!-- ============ INVITE GUIDE DIALOG ============ -->
+  <dialog id="quiz-dialog" class="dialog quiz-dialog">
+    <div class="dialog-head">
+      <h2 id="quiz-title">Wedding guest list guide</h2>
+      <button type="button" class="icon-btn" data-quiz-close aria-label="Close">&times;</button>
+    </div>
+    <div class="dialog-body quiz-body">
+      <div class="quiz-chooser" id="quiz-chooser">
+        <p class="muted">Having trouble deciding who makes the list? Pick what you need help with — these aren't rules, so when all else fails, go with your heart.</p>
+        <button type="button" class="quiz-choice" data-flow="guest">
+          <b>A guest</b>
+          <span>Family, friends, co-workers &amp; exes</span>
+        </button>
+        <button type="button" class="quiz-choice" data-flow="kids">
+          <b>Kids at the ceremony</b>
+          <span>Should children be invited?</span>
+        </button>
+        <button type="button" class="quiz-choice" data-flow="plusOne">
+          <b>A plus-one</b>
+          <span>Should their partner be invited?</span>
+        </button>
+      </div>
+
+      <p class="quiz-trail" id="quiz-trail"></p>
+      <p class="quiz-question" id="quiz-question"></p>
+      <div class="quiz-answers" id="quiz-answers">
+        <button type="button" class="btn btn-primary quiz-answer" data-answer="yes">Yes</button>
+        <button type="button" class="btn btn-ghost quiz-answer" data-answer="no">No</button>
+      </div>
+      <div class="quiz-result" id="quiz-result" hidden>
+        <p class="quiz-verdict" id="quiz-verdict"></p>
+        <div class="quiz-result-actions" id="quiz-result-actions"></div>
+      </div>
+    </div>
+    <div class="dialog-foot">
+      <button type="button" class="btn btn-ghost" id="quiz-back" hidden>&larr; Back</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn btn-ghost" id="quiz-restart" hidden>Start over</button>
+    </div>
   </dialog>
 
   <template id="guest-row-template">

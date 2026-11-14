@@ -63,14 +63,42 @@ async function busy(button, label, work) {
   }
 }
 
+// ---------- Home ----------
+function showHome() {
+  $("#home-page").hidden = false;
+  $("#loading-view").hidden = true;
+  $("#auth-view").hidden = true;
+  $("#app-view").hidden = true;
+}
+
+// Leaves the home page and restores an existing session, otherwise shows the login screen
+async function enterApp() {
+  $("#home-page").hidden = true;
+  $("#loading-view").hidden = false;
+  try {
+    const { data } = await auth.getSession();
+    if (data?.user) {
+      currentUser = { email: data.user.email, couple: data.user.name, date: "" };
+      await showApp();
+    } else {
+      showAuth();
+    }
+  } catch (ex) {
+    showAuth();
+    toast(ex.message);
+  }
+}
+
 // ---------- Auth ----------
 function showAuth() {
+  $("#home-page").hidden = true;
   $("#loading-view").hidden = true;
   $("#app-view").hidden = true;
   $("#auth-view").hidden = false;
 }
 
 async function showApp() {
+  $("#home-page").hidden = true;
   $("#loading-view").hidden = false;
   $("#auth-view").hidden = true;
   let profile, list;
@@ -182,10 +210,11 @@ const escapeHTML = (s) =>
 
 const RSVP_LABEL = { attending: "Attending", declined: "Declined", pending: "Awaiting" };
 const PRIORITIES = {
-  1: "Must have",
-  2: "Pretty important",
-  3: "Sorta important",
-  4: "If there's space",
+  1: "Move the wedding",
+  2: "Check calendars",
+  3: "Must invite",
+  4: "Maybe",
+  5: "If possible",
 };
 const priorityOf = (h) => Number(h.priority) || 1;
 const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
@@ -420,6 +449,138 @@ async function deleteHousehold() {
   });
 }
 
+// ---------- Invite quiz ----------
+// Mirrors the "Wedding Guest List" flow chart in assets/ (Uniquely Inviting),
+// which is really three independent guides: a guest, kids at the ceremony,
+// and plus-ones. Each node is a yes/no question; "yes"/"no" point to the next
+// node id within the same flow, or to a terminal outcome ("invite" / "dontInvite").
+const QUIZ_FLOWS = {
+  guest: {
+    title: "A guest",
+    start: "family",
+    nodes: {
+      family:          { label: "Family?", q: "Are they family?", yes: "immediateFamily", no: "friends" },
+      immediateFamily: { label: "Immediate family?", q: "Immediate family?", yes: "likeThem", no: "likeThem" },
+      likeThem:        { label: "Like them?", q: "Do you like them?", yes: "invite", no: "drama" },
+      drama:           { label: "Drama if skipped?", q: "Would it cause drama not to invite them?", yes: "invite", no: "wantInvited" },
+      wantInvited:     { label: "Want to be invited?", q: "Would you want to be invited to their wedding?", yes: "invite", no: "canImagine" },
+      canImagine:      { label: "Imagine without them?", q: "Can you imagine your wedding without them?", yes: "dontInvite", no: "invite" },
+      friends:         { label: "Friend?", q: "Are they a friend?", yes: "spokenRecently", no: "coworker" },
+      spokenRecently:  { label: "Spoken recently?", q: "Have you spoken with them in the last 1–2 years?", yes: "wantInvited", no: "coworker" },
+      coworker:        { label: "Co-worker?", q: "Are they a co-worker?", yes: "considerFriend", no: "anEx" },
+      considerFriend:  { label: "Consider a friend?", q: "Do you consider them a friend?", yes: "wantInvited", no: "anEx" },
+      anEx:            { label: "An ex?", q: "Are they an ex?", yes: "wantInvited", no: "dontInvite" },
+    },
+  },
+  kids: {
+    title: "Kids at the ceremony",
+    start: "mindKids",
+    nodes: {
+      mindKids: { label: "Mind kids?", q: "Do you mind having kids at the ceremony?", yes: "venue", no: "venue" },
+      venue:    { label: "Venue family-friendly?", q: "Is your reception venue family-friendly?", yes: "invite", no: "dontInvite" },
+    },
+  },
+  plusOne: {
+    title: "A plus-one",
+    start: "married",
+    nodes: {
+      married:     { label: "Married?", q: "Are they married?", yes: "invite", no: "knowPartner" },
+      knowPartner: { label: "Know & like partner?", q: "Do you know and like their significant other?", yes: "invite", no: "dontInvite" },
+    },
+  },
+};
+
+const quizDialog = $("#quiz-dialog");
+let quizFlowId = null; // null = chooser screen
+let quizNode = null;
+let quizHistory = []; // stack of node ids within the current flow
+
+const currentQuizFlow = () => (quizFlowId ? QUIZ_FLOWS[quizFlowId] : null);
+
+function renderQuiz() {
+  const flow = currentQuizFlow();
+  const isChooser = !flow;
+  $("#quiz-title").textContent = isChooser ? "Wedding guest list guide" : flow.title;
+  $("#quiz-chooser").hidden = !isChooser;
+  $("#quiz-back").hidden = isChooser;
+  if (isChooser) {
+    $("#quiz-trail").hidden = true;
+    $("#quiz-question").hidden = true;
+    $("#quiz-answers").hidden = true;
+    $("#quiz-result").hidden = true;
+    $("#quiz-restart").hidden = true;
+    return;
+  }
+
+  const node = flow.nodes[quizNode];
+  const isResult = !node;
+  $("#quiz-trail").hidden = false;
+  $("#quiz-question").hidden = isResult;
+  $("#quiz-answers").hidden = isResult;
+  $("#quiz-result").hidden = !isResult;
+  $("#quiz-restart").hidden = !isResult;
+
+  const trail = quizHistory.map((id) => flow.nodes[id].label);
+  if (!isResult) {
+    trail.push(node.label);
+    $("#quiz-question").textContent = node.q;
+  }
+  $("#quiz-trail").textContent = trail.join(" → ");
+
+  if (isResult) {
+    const invite = quizNode === "invite";
+    $("#quiz-verdict").className = `quiz-verdict ${invite ? "is-invite" : "is-skip"}`;
+    $("#quiz-verdict").textContent = invite ? "✓ Invite Them" : "✕ Don't Invite";
+    $("#quiz-result-actions").innerHTML =
+      quizFlowId === "guest"
+        ? invite
+          ? `<button type="button" class="btn btn-primary" data-quiz-apply="3">Set priority: 3 · Must invite</button>`
+          : `<button type="button" class="btn btn-ghost" data-quiz-apply="5">Set priority: 5 · If possible</button>`
+        : `<button type="button" class="btn btn-ghost" data-quiz-done>Done</button>`;
+  }
+}
+
+function chooseQuizFlow(flowId) {
+  quizFlowId = flowId;
+  quizNode = QUIZ_FLOWS[flowId].start;
+  quizHistory = [];
+  renderQuiz();
+}
+
+function answerQuiz(answer) {
+  const flow = currentQuizFlow();
+  const node = flow && flow.nodes[quizNode];
+  if (!node) return;
+  quizHistory.push(quizNode);
+  quizNode = node[answer];
+  renderQuiz();
+}
+
+function backQuiz() {
+  if (quizHistory.length) {
+    quizNode = quizHistory.pop();
+  } else {
+    quizFlowId = null;
+    quizNode = null;
+  }
+  renderQuiz();
+}
+
+function restartQuiz() {
+  if (!quizFlowId) return;
+  quizNode = QUIZ_FLOWS[quizFlowId].start;
+  quizHistory = [];
+  renderQuiz();
+}
+
+function openQuiz() {
+  quizFlowId = null;
+  quizNode = null;
+  quizHistory = [];
+  renderQuiz();
+  quizDialog.showModal();
+}
+
 // ---------- CSV export ----------
 function exportCSV() {
   const cell = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
@@ -474,17 +635,30 @@ $("#add-guest-btn").addEventListener("click", () => $(".g-name", addGuestRow()).
 hForm.addEventListener("submit", saveHousehold);
 $("#delete-household-btn").addEventListener("click", deleteHousehold);
 $$("[data-close]", dialog).forEach((b) => b.addEventListener("click", () => dialog.close()));
+$("#enter-app-btn").addEventListener("click", enterApp);
 
-// Restore an existing session, otherwise show the login screen
-try {
-  const { data } = await auth.getSession();
-  if (data?.user) {
-    currentUser = { email: data.user.email, couple: data.user.name, date: "" };
-    await showApp();
-  } else {
-    showAuth();
+$("#invite-guide-btn").addEventListener("click", openQuiz);
+$("#quiz-chooser").addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-flow]");
+  if (btn) chooseQuizFlow(btn.dataset.flow);
+});
+$("#quiz-answers").addEventListener("click", (e) => {
+  const btn = e.target.closest(".quiz-answer");
+  if (btn) answerQuiz(btn.dataset.answer);
+});
+$("#quiz-back").addEventListener("click", backQuiz);
+$("#quiz-restart").addEventListener("click", restartQuiz);
+$("#quiz-result-actions").addEventListener("click", (e) => {
+  const applyBtn = e.target.closest("[data-quiz-apply]");
+  if (applyBtn) {
+    const radio = hForm.querySelector(`input[name="priority"][value="${applyBtn.dataset.quizApply}"]`);
+    if (radio) radio.checked = true;
+    quizDialog.close();
+    return;
   }
-} catch (ex) {
-  showAuth();
-  toast(ex.message);
-}
+  if (e.target.closest("[data-quiz-done]")) quizDialog.close();
+});
+$$("[data-quiz-close]", quizDialog).forEach((b) => b.addEventListener("click", () => quizDialog.close()));
+
+// Land on the home page first; the guest list itself is one click away
+showHome();
