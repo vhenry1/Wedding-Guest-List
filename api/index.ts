@@ -55,7 +55,7 @@ function parseHousehold(body: any) {
   const priority = Number(body?.priority);
   const household = {
     name: str(body?.name, 200),
-    priority: priority >= 1 && priority <= 4 ? Math.trunc(priority) : 1,
+    priority: priority >= 1 && priority <= 5 ? Math.trunc(priority) : 1,
     side: SIDES.has(body?.side) ? body.side : "Bride",
     group: str(body?.group, 100),
     email: str(body?.email, 200),

@@ -468,8 +468,7 @@ const QUIZ_FLOWS = {
       friends:         { label: "Friend?", q: "Are they a friend?", yes: "spokenRecently", no: "coworker" },
       spokenRecently:  { label: "Spoken recently?", q: "Have you spoken with them in the last 1–2 years?", yes: "wantInvited", no: "coworker" },
       coworker:        { label: "Co-worker?", q: "Are they a co-worker?", yes: "considerFriend", no: "anEx" },
-      considerFriend:  { label: "Consider a friend?", q: "Do you consider them a friend?", yes: "wantInvited", no: "anEx" },
-      anEx:            { label: "An ex?", q: "Are they an ex?", yes: "wantInvited", no: "dontInvite" },
+      considerFriend:  { label: "Consider a friend?", q: "Do you consider them a friend?", yes: "wantInvited", no: "dontInvite" },
     },
   },
   kids: {
@@ -534,7 +533,7 @@ function renderQuiz() {
     $("#quiz-result-actions").innerHTML =
       quizFlowId === "guest"
         ? invite
-          ? `<button type="button" class="btn btn-primary" data-quiz-apply="3">Set priority: 3 · Must invite</button>`
+          ? `<button type="button" class="btn btn-primary" data-quiz-apply="3">Set priority: 3 · Maybe</button>`
           : `<button type="button" class="btn btn-ghost" data-quiz-apply="5">Set priority: 5 · If possible</button>`
         : `<button type="button" class="btn btn-ghost" data-quiz-done>Done</button>`;
   }

@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS households (
   id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id       text NOT NULL,
   name          text NOT NULL,
-  priority      smallint NOT NULL DEFAULT 1 CHECK (priority BETWEEN 1 AND 4),
+  priority      smallint NOT NULL DEFAULT 1 CHECK (priority BETWEEN 1 AND 5),
   side          text NOT NULL DEFAULT 'Bride' CHECK (side IN ('Bride', 'Groom', 'Both')),
   group_name    text NOT NULL DEFAULT '',
   email         text NOT NULL DEFAULT '',
